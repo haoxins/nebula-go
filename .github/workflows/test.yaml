@@ -1,4 +1,4 @@
-name: test
+name: Go Testing
 on:
   push:
     branches:
@@ -8,58 +8,51 @@ on:
     - main
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v2
-        - name: Lint
-          run: |
-            make lint
-
-  go-client:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goVer: ['1.23']
+        goVer:
+        - 1.23.x
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup go ${{ matrix.goVer }}
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.goVer }}
-      - name: Test with GO test
+      - name: Go test
         run: |
-          make up
+          cd ./nebula-docker-compose && docker compose up -d
           sleep 10
-          make test
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+          go test -v -race --tags=integration --covermode=atomic --coverprofile coverage.out
       - name: down
         if: always()
         run: |
-          make down
-  go-client-ssl:
+          cd ./nebula-docker-compose && docker compose down -v
+  test-with-ssl:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goVer: ['1.23']
+        goVer:
+        - 1.23.x
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup go ${{ matrix.goVer }}
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.goVer }}
-      - name: Test SSL connection with CA
+      - name: Go test
         run: |
-          make up-ssl
+          cd ./nebula-docker-compose && enable_ssl=true docker compose -f docker-compose-ssl.yaml up -d
           sleep 10
-          make ssl-test
+          ssl_test=true go test -v --tags=integration -run TestSslConnection
+	        ssl_test=true go test -v --tags=integration -run TestSslSessionPool
       - name: Test SSL connection self-signed
         run: |
-          make up-ssl
+          cd ./nebula-docker-compose && enable_ssl=true docker compose -f docker-compose-ssl.yaml up -d
           sleep 10
-          make ssl-test-self-signed
+          self_signed=true go test -v --tags=integration -run TestSslConnection
       - name: down
         if: always()
         run: |
-          make down
+          cd ./nebula-docker-compose && docker compose down -v
