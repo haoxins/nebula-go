@@ -3,6 +3,7 @@ thrift -r --gen go:skip_remote,package_prefix=github.com/haoxins/nebula-go/ thri
 thrift -r --gen go:skip_remote,package_prefix=github.com/haoxins/nebula-go/ thrift/meta.thrift
 thrift -r --gen go:skip_remote,package_prefix=github.com/haoxins/nebula-go/ thrift/storage.thrift
 
+rm -r nebula
 mv gen-go/nebula nebula
 rmdir gen-go
 go fmt ./...
