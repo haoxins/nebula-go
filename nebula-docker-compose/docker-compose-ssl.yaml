@@ -376,7 +376,6 @@ services:
       - --key_path=${key_path}
       - --enable_ssl=${enable_ssl}
 
-
     depends_on:
       - metad0
       - metad1
@@ -403,7 +402,7 @@ services:
   console:
     image: vesoft/nebula-console:nightly
     entrypoint: ""
-    command: 
+    command:
       - sh
       - -c
       - |
