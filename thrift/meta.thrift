@@ -3,12 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-namespace cpp nebula.meta
-namespace java com.vesoft.nebula.meta
 namespace go nebula.meta
-namespace js nebula.meta
-namespace csharp nebula.meta
-namespace py nebula3.meta
 
 include "common.thrift"
 

@@ -5,27 +5,7 @@
  */
 
 
-namespace cpp nebula
-namespace java com.vesoft.nebula
 namespace go nebula
-namespace js nebula
-namespace csharp nebula
-namespace py nebula3.common
-
-cpp_include "common/thrift/ThriftTypes.h"
-cpp_include "common/datatypes/DateOps-inl.h"
-cpp_include "common/datatypes/VertexOps-inl.h"
-cpp_include "common/datatypes/EdgeOps-inl.h"
-cpp_include "common/datatypes/PathOps-inl.h"
-cpp_include "common/datatypes/ValueOps-inl.h"
-cpp_include "common/datatypes/MapOps-inl.h"
-cpp_include "common/datatypes/ListOps-inl.h"
-cpp_include "common/datatypes/SetOps-inl.h"
-cpp_include "common/datatypes/DataSetOps-inl.h"
-cpp_include "common/datatypes/KeyValueOps-inl.h"
-cpp_include "common/datatypes/HostAddrOps-inl.h"
-cpp_include "common/datatypes/GeographyOps-inl.h"
-cpp_include "common/datatypes/DurationOps-inl.h"
 
 /*
  *
@@ -111,15 +91,15 @@ union Value {
     6: Date                                     dVal;
     7: Time                                     tVal;
     8: DateTime                                 dtVal;
-    9: Vertex (cpp.type = "nebula::Vertex")     vVal (cpp.ref_type = "unique");
-    10: Edge (cpp.type = "nebula::Edge")        eVal (cpp.ref_type = "unique");
-    11: Path (cpp.type = "nebula::Path")        pVal (cpp.ref_type = "unique");
-    12: NList (cpp.type = "nebula::List")       lVal (cpp.ref_type = "unique");
-    13: NMap (cpp.type = "nebula::Map")         mVal (cpp.ref_type = "unique");
-    14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
-    15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
-    16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
-    17: Duration (cpp.type = "nebula::Duration")     duVal (cpp.ref_type = "unique");
+    9: Vertex                                   vVal (cpp.ref_type = "unique");
+    10: Edge                                    eVal (cpp.ref_type = "unique");
+    11: Path                                    pVal (cpp.ref_type = "unique");
+    12: NList                                   lVal (cpp.ref_type = "unique");
+    13: NMap                                    mVal (cpp.ref_type = "unique");
+    14: NSet                                    uVal (cpp.ref_type = "unique");
+    15: DataSet                                 gVal (cpp.ref_type = "unique");
+    16: Geography                               ggVal (cpp.ref_type = "unique");
+    17: Duration                                duVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 

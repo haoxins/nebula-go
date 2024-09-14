@@ -4,12 +4,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-namespace cpp nebula.graph
-namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
-namespace js nebula.graph
-namespace csharp nebula.graph
-namespace py nebula3.graph
 
 include "common.thrift"
 
