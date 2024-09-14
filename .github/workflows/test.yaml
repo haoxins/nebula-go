@@ -41,12 +41,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.goVer }}
-      - name: Go test
+      - name: Go test with SSL
         run: |
           cd ./nebula-docker-compose && enable_ssl=true docker compose -f docker-compose-ssl.yaml up -d
           sleep 10
           ssl_test=true go test -v --tags=integration -run TestSslConnection
-	        ssl_test=true go test -v --tags=integration -run TestSslSessionPool
+          ssl_test=true go test -v --tags=integration -run TestSslSessionPool
       - name: Test SSL connection self-signed
         run: |
           cd ./nebula-docker-compose && enable_ssl=true docker compose -f docker-compose-ssl.yaml up -d
