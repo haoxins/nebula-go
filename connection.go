@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/haoxins/nebula-go/nebula"
 	"github.com/haoxins/nebula-go/nebula/graph"
-	"github.com/vesoft-inc/fbthrift/thrift/lib/go/thrift"
 	"golang.org/x/net/http2"
 )
 
@@ -32,6 +32,7 @@ type connection struct {
 	httpHeader   http.Header
 	handshakeKey string
 	graph        *graph.GraphServiceClient
+	transport    thrift.TTransport
 }
 
 func newConnection(severAddress HostAddress) *connection {
@@ -58,12 +59,12 @@ func (cn *connection) open(hostAddress HostAddress, timeout time.Duration, sslCo
 
 	var (
 		err       error
-		transport thrift.Transport
-		pf        thrift.ProtocolFactory
+		transport thrift.TTransport
+		pf        thrift.TProtocolFactory
 	)
 	if useHTTP2 {
 		if sslConfig != nil {
-			transport, err = thrift.NewHTTPPostClientWithOptions("https://"+newAdd, thrift.HTTPClientOptions{
+			transport, err = thrift.NewTHttpClientWithOptions("https://"+newAdd, thrift.THttpClientOptions{
 				Client: &http.Client{
 					Transport: &http2.Transport{
 						TLSClientConfig: sslConfig,
@@ -71,7 +72,7 @@ func (cn *connection) open(hostAddress HostAddress, timeout time.Duration, sslCo
 				},
 			})
 		} else {
-			transport, err = thrift.NewHTTPPostClientWithOptions("http://"+newAdd, thrift.HTTPClientOptions{
+			transport, err = thrift.NewTHttpClientWithOptions("http://"+newAdd, thrift.THttpClientOptions{
 				Client: &http.Client{
 					Transport: &http2.Transport{
 						// So http2.Transport doesn't complain the URL scheme isn't 'https'
@@ -89,9 +90,9 @@ func (cn *connection) open(hostAddress HostAddress, timeout time.Duration, sslCo
 		if err != nil {
 			return fmt.Errorf("failed to create a net.Conn-backed Transport,: %s", err.Error())
 		}
-		pf = thrift.NewBinaryProtocolFactoryDefault()
+		pf = thrift.NewTBinaryProtocolFactoryDefault()
 		if httpHeader != nil {
-			client, ok := transport.(*thrift.HTTPClient)
+			client, ok := transport.(*thrift.THttpClient)
 			if !ok {
 				return fmt.Errorf("failed to get thrift http client")
 			}
@@ -109,26 +110,28 @@ func (cn *connection) open(hostAddress HostAddress, timeout time.Duration, sslCo
 	} else {
 		bufferSize := 128 << 10
 
-		var sock thrift.Transport
+		var sock thrift.TTransport
 		if sslConfig != nil {
-			sock, err = thrift.NewSSLSocketTimeout(newAdd, sslConfig, timeout)
+			sock, err = thrift.NewTSSLSocketTimeout(newAdd, sslConfig, timeout, timeout)
 		} else {
-			sock, err = thrift.NewSocket(thrift.SocketAddr(newAdd), thrift.SocketTimeout(timeout))
+			sock, err = thrift.NewTSocketTimeout(newAdd, timeout, timeout)
 		}
 		if err != nil {
 			return fmt.Errorf("failed to create a net.Conn-backed Transport,: %s", err.Error())
 		}
 		// Set transport
-		bufferedTranFactory := thrift.NewBufferedTransportFactory(bufferSize)
-		transport = thrift.NewHeaderTransport(bufferedTranFactory.GetTransport(sock))
-		pf = thrift.NewHeaderProtocolFactory()
+		bufferedTranFactory := thrift.NewTBufferedTransportFactory(bufferSize)
+		buffTransport, _ := bufferedTranFactory.GetTransport(sock)
+		transport = thrift.NewTHeaderTransport(buffTransport)
+		pf = thrift.NewTHeaderProtocolFactory()
 	}
 
+	cn.transport = transport
 	cn.graph = graph.NewGraphServiceClientFactory(transport, pf)
-	if err = cn.graph.Open(); err != nil {
+	if err = transport.Open(); err != nil {
 		return fmt.Errorf("failed to open transport, error: %s", err.Error())
 	}
-	if !cn.graph.IsOpen() {
+	if !transport.IsOpen() {
 		return fmt.Errorf("transport is off")
 	}
 	return cn.verifyClientVersion()
@@ -137,9 +140,10 @@ func (cn *connection) open(hostAddress HostAddress, timeout time.Duration, sslCo
 func (cn *connection) verifyClientVersion() error {
 	req := graph.NewVerifyClientVersionReq()
 	if cn.handshakeKey != "" {
-		req.SetVersion([]byte(cn.handshakeKey))
+		req.Version = []byte(cn.handshakeKey)
 	}
-	resp, err := cn.graph.VerifyClientVersion(req)
+	// TODO - ctx
+	resp, err := cn.graph.VerifyClientVersion(context.Background(), req)
 	if err != nil {
 		cn.close()
 		return fmt.Errorf("failed to verify client handshakeKey: %s", err.Error())
@@ -161,10 +165,11 @@ func (cn *connection) reopen() error {
 
 // Authenticate
 func (cn *connection) authenticate(username, password string) (*graph.AuthResponse, error) {
-	resp, err := cn.graph.Authenticate([]byte(username), []byte(password))
+	ctx := context.Background() // TODO - ctx
+	resp, err := cn.graph.Authenticate(ctx, []byte(username), []byte(password))
 	if err != nil {
 		err = fmt.Errorf("authentication fails, %s", err.Error())
-		if e := cn.graph.Close(); e != nil {
+		if e := cn.transport.Close(); e != nil {
 			err = fmt.Errorf("fail to close transport, error: %s", e.Error())
 		}
 		return nil, err
@@ -179,7 +184,8 @@ func (cn *connection) execute(sessionID int64, stmt string) (*graph.ExecutionRes
 
 func (cn *connection) executeWithParameter(sessionID int64, stmt string,
 	params map[string]*nebula.Value) (*graph.ExecutionResponse, error) {
-	resp, err := cn.graph.ExecuteWithParameter(sessionID, []byte(stmt), params)
+	ctx := context.Background() // TODO - ctx
+	resp, err := cn.graph.ExecuteWithParameter(ctx, sessionID, []byte(stmt), params)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +194,9 @@ func (cn *connection) executeWithParameter(sessionID int64, stmt string,
 }
 
 func (cn *connection) executeWithParameterTimeout(sessionID int64, stmt string, params map[string]*nebula.Value, timeoutMs int64) (*graph.ExecutionResponse, error) {
-	return cn.graph.ExecuteWithTimeout(sessionID, []byte(stmt), params, timeoutMs)
+	ctx := context.Background() // TODO - ctx and timeout
+	return cn.graph.ExecuteWithParameter(ctx, sessionID, []byte(stmt), params)
+	// return cn.graph.ExecuteWithTimeout(ctx, sessionID, []byte(stmt), params, timeoutMs)
 }
 
 func (cn *connection) executeJson(sessionID int64, stmt string) ([]byte, error) {
@@ -196,17 +204,18 @@ func (cn *connection) executeJson(sessionID int64, stmt string) ([]byte, error) 
 }
 
 func (cn *connection) ExecuteJsonWithParameter(sessionID int64, stmt string, params map[string]*nebula.Value) ([]byte, error) {
-	jsonResp, err := cn.graph.ExecuteJsonWithParameter(sessionID, []byte(stmt), params)
+	ctx := context.Background() // TODO - ctx
+	jsonResp, err := cn.graph.ExecuteJsonWithParameter(ctx, sessionID, []byte(stmt), params)
 	if err != nil {
 		// reopen the connection if timeout
-		_, ok := err.(thrift.TransportException)
+		_, ok := err.(thrift.TTransportException)
 		if ok {
-			if err.(thrift.TransportException).TypeID() == thrift.TIMED_OUT {
+			if err.(thrift.TTransportException).TypeId() == thrift.TIMED_OUT {
 				reopenErr := cn.reopen()
 				if reopenErr != nil {
 					return nil, reopenErr
 				}
-				return cn.graph.ExecuteJsonWithParameter(sessionID, []byte(stmt), params)
+				return cn.graph.ExecuteJsonWithParameter(ctx, sessionID, []byte(stmt), params)
 			}
 		}
 	}
@@ -223,7 +232,8 @@ func (cn *connection) ping() bool {
 // Sign out and release session ID
 func (cn *connection) signOut(sessionID int64) error {
 	// Release session ID to graphd
-	return cn.graph.Signout(sessionID)
+	ctx := context.Background() // TODO - ctx
+	return cn.graph.Signout(ctx, sessionID)
 }
 
 // Update returnedAt for cleaner
@@ -233,5 +243,5 @@ func (cn *connection) release() {
 
 // Close transport
 func (cn *connection) close() {
-	cn.graph.Close()
+	cn.transport.Close()
 }

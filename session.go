@@ -416,15 +416,15 @@ func value2Nvalue(param interface{}) (value *nebula.Value, err error) {
 	case nebula.Value:
 		value = &v
 	case nebula.Date:
-		value.SetDVal(&v)
+		value.DVal = &v
 	case nebula.DateTime:
-		value.SetDtVal(&v)
+		value.DtVal = &v
 	case nebula.Duration:
-		value.SetDuVal(&v)
+		value.DuVal = &v
 	case nebula.Time:
-		value.SetTVal(&v)
+		value.TVal = &v
 	case nebula.Geography:
-		value.SetGgVal(&v)
+		value.GgVal = &v
 	default:
 		// unsupported other Value type, use this function carefully
 		err = fmt.Errorf("only support convert boolean/float/int/int64/string/map/list to nebula.Value but %T", param)

@@ -3,8 +3,8 @@ module github.com/haoxins/nebula-go
 go 1.23
 
 require (
+	github.com/apache/thrift v0.20.0
 	github.com/stretchr/testify v1.9.0
-	github.com/vesoft-inc/fbthrift v0.0.0-20230214024353-fa2f34755b28
 	golang.org/x/net v0.29.0
 )
 

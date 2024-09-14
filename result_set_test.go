@@ -641,7 +641,7 @@ func TestResultSet(t *testing.T) {
 		PlanNodeDescs: []*graph.PlanNodeDescription{
 			{
 				Name:         []byte("Project"),
-				Id:           0,
+				ID:           0,
 				OutputVar:    []byte("__Project_0"),
 				Description:  []*graph.Pair{},
 				Profiles:     []*graph.ProfilingStats{},
@@ -649,7 +649,7 @@ func TestResultSet(t *testing.T) {
 				Dependencies: []int64{2}},
 			{
 				Name:         []byte("Start"),
-				Id:           2,
+				ID:           2,
 				OutputVar:    []byte("__Start_2"),
 				Description:  []*graph.Pair{},
 				Profiles:     []*graph.ProfilingStats{},
@@ -1134,7 +1134,7 @@ func getNestDateset() *nebula.DataSet {
 		[]byte("relationships"),
 	}
 	var list1 = nebula.NewValue()
-	list1.SetLVal(&nebula.NList{
+	list1.LVal = &nebula.NList{
 		Values: []*nebula.Value{
 			{
 				VVal: &nebula.Vertex{
@@ -1165,10 +1165,10 @@ func getNestDateset() *nebula.DataSet {
 				},
 			},
 		},
-	})
+	}
 
 	var list2 = nebula.NewValue()
-	list2.SetLVal(&nebula.NList{
+	list2.LVal = &nebula.NList{
 		Values: []*nebula.Value{
 			{
 				EVal: &nebula.Edge{
@@ -1191,7 +1191,7 @@ func getNestDateset() *nebula.DataSet {
 				},
 			},
 		},
-	})
+	}
 
 	valueList := []*nebula.Value{list1, list2}
 	var rows []*nebula.Row
