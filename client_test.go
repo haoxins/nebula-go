@@ -1376,7 +1376,9 @@ func stopContainer(t *testing.T, containerName string) {
 	cmd := exec.Command("docker", "stop", containerName)
 	err := cmd.Run()
 	if err != nil {
-		t.Fatalf("failed to stop container, name: %s, error code: %s", containerName, err.Error())
+		cmd = exec.Command("docker", "ps", "--all", "--format", "'{{.Names}}'")
+		out, _ := cmd.Output()
+		t.Fatalf("failed to stop container: %s, all containers: %s, error: %s", containerName, out, err.Error())
 	}
 }
 
